@@ -1,2 +1,2 @@
-# cpp_odb_generator
-Automatic odb cpp compatible codes generation from MySQL database
+# C++ odb generator
+Generator of C++ compatible classes with [odb](http://www.codesynthesis.com/products/odb/) from MySQL database.
