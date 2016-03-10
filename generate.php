@@ -1,8 +1,8 @@
 <?php
 
-include 'utils.php';
-include 'dbclasses.php';
-include 'cppclasses.php';
+include 'includes/utils.php';
+include 'includes/dbclasses.php';
+include 'includes/cppclasses.php';
 
 
 if (isset($_GET["debug"])) {

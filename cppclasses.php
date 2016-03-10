@@ -1,6 +1,6 @@
 <?php
 
-include_once 'utils.php';
+include_once 'includes/utils.php';
 /**
 * Generate C++ qt/obd compatible class from MySql table info
 */

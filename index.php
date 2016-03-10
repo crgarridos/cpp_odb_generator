@@ -5,9 +5,6 @@
 //header("Content-Type: application/force-download");
 
 //ini_set('default_charset','iso-8859-1');
-include "utils.php";
-include 'dbclasses.php';
-include 'cppclasses.php';
 
 /*error_reporting(E_ALL);
 ini_set('display_errors', TRUE);
@@ -26,8 +23,6 @@ if (isset($_POST["generate"])){
 		$urlbase = 'http://localhost'.$_SERVER['REQUEST_URI'].'generate.php?';
 		$json = file_get_contents($urlbase, false, stream_context_create($opts));
 		$zip = file_get_contents($urlbase."download", false, stream_context_create($opts));
-		if($json === FALSE)
-			echo "<p style='color:red'>The given infos are invalides to recover the db's tables</p>";
 		$files = json_decode($json);
 }
 ?>
@@ -35,10 +30,10 @@ if (isset($_POST["generate"])){
 <html>
 <head>
 	<title>Generate Odb c++ classes from MySQL tables</title>
-	<link rel="stylesheet" href="magula.min.css"/>
-	<link rel="stylesheet" href="jquery-ui.min.css"/>
-	<script src="highlight.min.js"></script>
-	<script src="jquery.min.js"></script>
+	<link rel="stylesheet" href="css/magula.min.css"/>
+	<link rel="stylesheet" href="css/jquery-ui.min.css"/>
+	<script src="js/highlight.min.js"></script>
+	<script src="js/jquery.min.js"></script>
 	<script>
 
 		hljs.initHighlightingOnLoad();
@@ -46,7 +41,7 @@ if (isset($_POST["generate"])){
 	    	$( "#tabs" ).tabs();
     	})
     </script>
-	<script src="jquery-ui.min.js"></script>
+	<script src="js/jquery-ui.min.js"></script>
 	<style type="text/css">
 	pre{
 		background: #E5E5E5!important;
@@ -67,7 +62,11 @@ if (isset($_POST["generate"])){
 		<input type="hidden" name="generate" value="generate" />
 		<input type="submit" value="Submit" />
 	</form>
-	<?php if (isset($_POST["generate"])): ?>
+	<?php if (isset($_POST["generate"])): 
+		if(!$json){
+			echo "<p style='color:red'>The given infos are invalides to recover the db's tables</p>";
+			exit;
+		}?>
 		<form action="generate.php?download" method="post" style="text-align: center;padding: 3em">
 			<input type="hidden" name="db" value="<?= $_POST['db']?>"/>
 			<input type="hidden" name="host" value="<?= $_POST['host']?>"/>
