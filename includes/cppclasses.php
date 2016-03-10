@@ -1,6 +1,6 @@
 <?php
 
-include_once 'utils.php';
+include_once 'includes/utils.php';
 /**
 * Generate C++ qt/obd compatible class from MySql table info
 */
@@ -19,14 +19,19 @@ class CppQtOdbClass{
 
 	private function genAttr($attr,$ident){
 		$code = "";
+		$def = $ident.$attr->type." ".$attr->name.";\n";
+		$pragma = "";
 		if ($attr->isPK()) {
-			$code .= $ident."#pragma db id";
+			$pragma = "\n".$ident."#pragma db id";
 			if ($attr->isInt()) {
-				$code .= " auto";
+				$pragma .= " auto";
 			}
-			$code .= "\n";
+			$pragma .= "\n";
 		}
-		$code .= $ident.$attr->type." ".$attr->name.";\n";
+		else if ($attr->notnull) {
+			$pragma .= "\n".$ident."#pragma db notnull\n";
+		}
+		$code .= $pragma.$def;
 		return $code;
 	}
 
@@ -82,7 +87,7 @@ class CppQtOdbClass{
 		$public = "\tpublic: \n";
 		$private = "\tprivate:\n";
 		$private.= "\t\t".$this->genConstructor();
-		$private.= "\t\tfriend class odb::access;\n\n";
+		$private.= "\t\tfriend class odb::access;\n";
 		foreach ($this->attrs as $attr) {
 			$private.= $this->genAttr($attr,"\t\t");
 			$public .= $this->genGetter($attr,!$asHeader,"\t\t");
@@ -110,7 +115,7 @@ class CppAttr
 	{
 		$this->name = $mysqlAttr->cname;
 		$this->type = $this->cppType($mysqlAttr->ctype);
-		$this->notnull = $mysqlAttr->cnull == 'YES';
+		$this->notnull = $mysqlAttr->cnull !== 'YES';
 		$this->extra = $mysqlAttr->cextra;
 		$this->key_type = $mysqlAttr->ckey;
 	}
@@ -126,7 +131,7 @@ class CppAttr
 	public function cppType($mysqlType){
 		switch (strtolower($mysqlType)) {
 			case 'bigint': return 'long';
-			case 'binary': return 'byte[]';
+			case 'binary': return 'QByteArray';
 			case 'bit': return 'bool';
 			case 'char': return 'QString';
 			case 'date': return 'QDate';
@@ -135,7 +140,7 @@ class CppAttr
 			case 'decimal': return 'double';
 			case 'double': return 'double';
 			case 'float': return 'float';
-			case 'image': return 'byte[]';
+			case 'image': return 'QByteArray';
 			case 'int': return 'int';
 			case 'longtext': return 'QString';
 			case 'money': return 'double';
@@ -153,7 +158,7 @@ class CppAttr
 			case 'timestamp': return 'QDate';
 			case 'tinyint': return 'bool';
 			case 'uniqueidentifier': return 'QString';
-			case 'varbinary': return 'byte[]';
+			case 'varbinary': return 'QByteArray';
 			case 'varchar': return 'QString';
 			case 'year': return 'int';
 			default: return 'UNKNOWN_'.$mysqlType; 

@@ -24,9 +24,11 @@ $dbInfo = new DatebaseInformation($connDetails);
 
 $tables =  $dbInfo->getAllTablesNames();
 $files = array();
-foreach ($tables as $table){
+foreach ($tables as $table) {
     $infoArr = $dbInfo->getInfo($table);
+    //echo "<pre>";print_r($infoArr); echo "</pre>";
     $generator = new CppQtOdbClass($table, $infoArr);
+    //echo "<pre>";print_r($generator); echo "</pre>";
     $files[] = (object)[
         "name" => snakeToCamelUC($table),
         "code" => $generator->generate(false),
