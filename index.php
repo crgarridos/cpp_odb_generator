@@ -78,12 +78,12 @@ if (isset($_POST["generate"])){
 		  	<ul>
 		  		<?php 
 		  		for ($i = 0 ; $i < count($files); $i++) { 
-		  			echo "<li><a href='#tabs-".($i+1)."'>".$files[$i]->name.".cpp</a></li>";
+		  			echo "<li><a href='#tabs-".($i+1)."'>".$files[$i]->name.".hxx</a></li>";
 		  		}?>
 			</ul>
 			<?php 
 	  		for ($i=0; $i < count($files); $i++) { 
-	  			echo "<pre id='tabs-".($i+1)."'><code class='cpp'>".nl2br(htmlentities($files[$i]->code))."</code></pre>";
+	  			echo "<pre id='tabs-".($i+1)."'><code class='cpp'>".nl2br(htmlentities($files[$i]->header))."</code></pre>";
 	  		}?>
 		</div>
 	<?php endif ?>

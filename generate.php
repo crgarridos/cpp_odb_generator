@@ -1,5 +1,9 @@
 <?php
 
+error_reporting(E_ALL);
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
+
 include 'includes/utils.php';
 include 'includes/dbclasses.php';
 include 'includes/cppclasses.php';
@@ -44,8 +48,8 @@ if(isset($_GET["download"])){
     }
 
     foreach ($files as $file) {
-        $zip->addFromString($file->name.".cpp", $file->code);
-        $zip->addFromString($file->name.".hpp", $file->header);
+        //$zip->addFromString($file->name.".cxx", $file->code);
+        $zip->addFromString($file->name.".hxx", $file->header);
     }
     $zip->close();
     header('Content-Type: application/zip');
