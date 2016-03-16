@@ -6,7 +6,7 @@ include_once 'includes/utils.php';
 */
 class CppQtOdbClass{
 
-	private $className, $attrs;
+	private $className, $tableName, $attrs;
 	
 	/**
 	* @param $table the table's name
@@ -14,6 +14,7 @@ class CppQtOdbClass{
 	*/
 	public function __construct($table, $info){
 		$this->className = snakeToCamelUC($table);
+		$this->tableName = strtoupper($table);
 		$this->attrs = self::normalize($info);
 	}
 
@@ -139,7 +140,7 @@ class CppQtOdbClass{
 			$public .= self::autoIdent("\t\t", $this->getter($attr))."\n";
 			//$public .= "\n";
 		}
-		$code .= "#pragma db object\n";
+		$code .= "#pragma db object table(\"".$this->tableName."\")\n";
 		$code .= "class ".$this->className."{\n\n";
 		$code .= $private."\n";
 		$code .= $public."\n";
@@ -242,3 +243,4 @@ class CppAttr
 		}
 	}
 }
+
