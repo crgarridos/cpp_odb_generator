@@ -1,6 +1,8 @@
 <?php
 
 include_once 'includes/utils.php';
+
+include_once 'includes/qtclasses.php';
 /**
 * Generate C++ qt/obd compatible class from MySql table info
 */
@@ -10,12 +12,16 @@ class CppQtOdbClass{
 	
 	/**
 	* @param $table the table's name
-	* @param $info array of stdObject with attrs' info
+	* @param $attrs array of stdObject with attrs' info
 	*/
-	public function __construct($table, $info){
+	public function __construct($table, $attrs, $rels){
 		$this->className = snakeToCamelUC($table);
-		$this->tableName = strtoupper($table);
-		$this->attrs = self::normalize($info);
+		$this->tableName = strtolower($table);
+		$this->attrs = self::normalizeAttrs($attrs);
+		$this->rels = self::normalizeRels($rels);
+		if ($this->doesntHaveId()) {
+			$this->addDefaultId();
+		}
 	}
 
 	private function genAttr($attr,$ident){
@@ -30,11 +36,29 @@ class CppQtOdbClass{
 			if ($attr->isInt()) {
 				$pragma .= " auto";
 			}
+			if ($attr->name === "id") {
+				$pragma .= ' column("_id")';
+			}
 			$pragma .= "\n";
 		}
 		else if ($attr->notnull) {
 			$pragma .= "\n".$ident."#pragma db not_null\n";
 		}
+		$code .= $pragma.$def."\n";;
+		return $code;
+	}
+
+	private function genRelMember($rel){
+		$code = "";
+		$def = QtTypes::sharedp(snakeToCamelUC($rel->tableRef))." ".camelToSnake($rel->name_).";";
+		if ($rel->comment != "") {
+			$def .= " // ".$rel->comment;
+		}
+		$pragma = "\n#pragma db ";
+		if ($rel->notnull) {
+			$pragma .= "not_null ";
+		}
+		$pragma .= "column(\"".$rel->name_fk."\")\n";
 		$code .= $pragma.$def."\n";;
 		return $code;
 	}
@@ -68,31 +92,19 @@ class CppQtOdbClass{
 		$code.= "{\n\treturn ".$attr->name_.";\n}\n";
 		return $code;
 	}
-
-	private function genGetter($attr,$withBody,$ident){
-		$code = $ident.$attr->type.' get'.snakeToCamelUC($attr->name).'()';
-		if($withBody)
-			$code .= "{\n\t".$ident."return ".$attr->name.";\n".$ident."}\n";
-		else 
-			$code .= ";\n";
-		return $code;
-	}
-
-
-	private function genSetter($attr,$withBody,$ident){
-		$code = $ident.'void set'.snakeToCamelUC($attr->name).'('.$attr->type.' '.$attr->name.')';
-		if($withBody)
-			$code .= "{\n\t".$ident."this.".$attr->name.' = '.$attr->name.";\n".$ident."}\n";
-		else 
-			$code .= ";\n";
-		return $code;
+		private function getterRel($rel){
+		//$code = "const ".$attr->type."&\n";
+		//$code.= $attr->name." () const\n";
+		//$code.= "{\n\treturn ".$attr->name_.";\n}\n";
+		//return $code;
+		return null;
 	}
 
 	/**
 	* @param $info array of stdObject with attrs' mysql info
 	* @return an array with Cpp attributes' info objects
 	*/
-	static function normalize($info){
+	static function normalizeAttrs($info){
 		$attrs = array();
 		foreach ($info as $mysqlAttr) {
 			$attrs[] = new CppAttr($mysqlAttr);
@@ -100,13 +112,32 @@ class CppQtOdbClass{
 		return $attrs;
 	}
 
-	public function genIncludes($attrs){
+/**
+	* @param $info array of stdObject with relations' mysql info
+	* @return an array with Cpp attributes' info objects
+	*/
+	static function normalizeRels($info){
+		$rels = array();
+		foreach ($info as $mysqlRel) {
+			$rels[] = new CppRelation($mysqlRel);
+		}
+		return $rels;
+	}
+
+
+	public function genIncludes($attrs, $rels){
 		$includes = array();
-		$code = "";
+		$code = "#include <QtCore/QSharedPointer>\n";
 		foreach ($attrs as $attr) {
 			if(startsWith($attr->type, 'Q')  && !in_array($attr->type, $includes)){
 				$includes[] = $attr->type;
 				$code .= '#include <QtCore/'.$attr->type.">\n";
+			}
+		}
+		foreach ($rels as $rel) {
+			if(!in_array($rel->type, $includes)){
+				$includes[] = $rel->type;
+				$code .= "#include \"".$rel->type.".hxx\"\n";
 			}
 		}
 		$code .= "\n#include <odb/core.hxx>\n";
@@ -121,7 +152,7 @@ class CppQtOdbClass{
 			$code .= "#define ".strtoupper($this->className)."_HXX\n\n";
 		}
 
-		$code .= $this->genIncludes($this->attrs);
+		$code .= $this->genIncludes($this->attrs, $this->rels);
 		$public = "\tpublic: \n";
 		if ($this->genConstructor(true) !== $this->genConstructor(false)) {
 			$public.= self::autoIdent("\t\t", $this->genConstructor(true))."\n";
@@ -130,14 +161,19 @@ class CppQtOdbClass{
 		$private.= "\t\tfriend class odb::access;\n";
 		$private.= "\t\t".$this->genConstructor(false)."\n";
 
-		if ($this->doesntHaveId()) {
-			$this->addDefaultId();
-		}
 		foreach ($this->attrs as $attr) {
 			$private.= $this->genAttr($attr,"\t\t");
 			//$public .= $this->genGetter($attr,!$asHeader,"\t\t");
 			//$public .= $this->genSetter($attr,!$asHeader,"\t\t");
 			$public .= self::autoIdent("\t\t", $this->getter($attr))."\n";
+			//$public .= "\n";
+		}
+
+		foreach ($this->rels as $rel) {
+			$private.= self::autoIdent("\t\t", $this->genRelMember($rel,"\t\t"));
+			//$public .= $this->genGetter($attr,!$asHeader,"\t\t");
+			//$public .= $this->genSetter($attr,!$asHeader,"\t\t");
+			$public .= self::autoIdent("\t\t", $this->getterRel($rel));
 			//$public .= "\n";
 		}
 		$code .= "#pragma db object table(\"".$this->tableName."\")\n";
@@ -173,7 +209,32 @@ class CppQtOdbClass{
 	}
 
 	static function autoIdent($tabs, $code){
-		return $tabs.join("\n".$tabs, explode("\n", $code));
+		return $tabs.join("\n".$tabs, explode("\n", $code))."\n";
+	}
+}
+
+/**
+* Class to normalize the info recovered from infoschema
+*/
+class CppRelation
+{
+	
+	public $name, $name_, $name_fk, $tableRef, $type, $notnull, $comment;
+
+	function __construct($mysqlRel)
+	{
+		if ($mysqlRel === null) {
+			return;
+		}
+		if (endsWith($mysqlRel->c, "_id")) {
+			$this->name = substr($mysqlRel->c, 0, count($mysqlRel->c) - 3);
+		}
+		else $this->name = $mysqlRel->c;
+		$this->name_fk = $mysqlRel->c;
+		$this->name_ = $this->name;
+		$this->tableRef = $mysqlRel->tref;
+		$this->type = snakeToCamelUC($mysqlRel->tref);
+		$this->notnull = $mysqlRel->cnull !== 'YES';
 	}
 }
 

@@ -31,15 +31,29 @@ class DatebaseInformation{
         $this->connection = self::$databases[$connDetails.''];
     }
     
-    public function getInfo($table){
-    	$propertiesSQL =  file_get_contents("includes/properties.sql");
-		$propertiesSQL =  str_replace("&table", $table, $propertiesSQL);
-		$propertiesSQL =  str_replace("&db", $this->details->dbname, $propertiesSQL);
-		//$this->printSQL($propertiesSQL);
+    public function getAttrs($table){
+        $propertiesSQL =  file_get_contents("includes/properties.sql");
+        $propertiesSQL =  str_replace("&table", $table, $propertiesSQL);
+        $propertiesSQL =  str_replace("&db", $this->details->dbname, $propertiesSQL);
+        //$this->printSQL($propertiesSQL);
 
         //$args = func_get_args();
         //array_shift($args);
         $statement = $this->connection->prepare($propertiesSQL);
+        $statement->execute();
+        return $statement->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    
+    public function getRelations($table){
+        $relationsSQL =  file_get_contents("includes/relations.sql");
+        $relationsSQL =  str_replace("&table", $table, $relationsSQL);
+        $relationsSQL =  str_replace("&db", $this->details->dbname, $relationsSQL);
+        //$this->printSQL($relationsSQL);
+
+        //$args = func_get_args();
+        //array_shift($args);
+        $statement = $this->connection->prepare($relationsSQL);
         $statement->execute();
         return $statement->fetchAll(PDO::FETCH_OBJ);
     }
