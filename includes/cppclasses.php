@@ -124,11 +124,10 @@ class CppQtOdbClass{
 	}
 	
 	private function getterRelOne($rel){
-		//$code = "const ".$attr->type."&\n";
-		//$code.= $attr->name." () const\n";
-		//$code.= "{\n\treturn ".$attr->name_.";\n}\n";
-		//return $code;
-		return null;
+		$code = Qt::QSharedPointer($rel->type)."\n";
+		$code.= $rel->name." () const\n";
+		$code.= "{\n\treturn ".$rel->name_.";\n}\n";
+		return $code;
 	}	
 	private function getterRelMany($rel){
 		//$code = "const ".$attr->type."&\n";
@@ -166,7 +165,7 @@ class CppQtOdbClass{
 	public function genIncludes($attrs, $relsOne, $relsMany){
 		$includes = array();
 		$odb = "";
-		$qt = "";
+		$qt = "#include <QObject>\n";
 		$forw = "";
 		$foot = "";
 		foreach ($attrs as $attr) {
@@ -220,43 +219,44 @@ class CppQtOdbClass{
 
 		$include = $this->genIncludes($this->attrs, $this->relsOne, $this->relsMany);
 		$code .= $include->code;
-		$public = "\tpublic: \n";
+		$public = "public: \n";
 		if ($this->genConstructor(true) !== $this->genConstructor(false)) {
-			$public.= self::autoIdent("\t\t", $this->genConstructor(true))."\n";
+			$public.= self::autoIdent("\t", $this->genConstructor(true))."\n";
 		}
-		$private = "\tprivate:\n";
-		$private.= "\t\tfriend class odb::access;\n";
-		$private.= "\t\t".$this->genConstructor(false)."\n";
+		$private = "private:\n";
+		$private.= "\tfriend class odb::access;\n";
+		$private.= "\t".$this->genConstructor(false)."\n";
 
 		foreach ($this->attrs as $attr) {
-			$private.= self::autoIdent("\t\t", $this->genAttr($attr));
+			$private.= self::autoIdent("\t", $this->genAttr($attr));
 			//$public .= $this->genGetter($attr,!$asHeader,"\t\t");
 			//$public .= $this->genSetter($attr,!$asHeader,"\t\t");
-			$public .= self::autoIdent("\t\t", $this->getter($attr))."\n";
+			$public .= self::autoIdent("\t", $this->getter($attr))."\n";
 			//$public .= "\n";
 		}
 
-		$private.= "\n\t\t// To One relations\n";
+		$private.= "\n\t// To One relations\n";
 		foreach ($this->relsOne as $rel) {
-			$private.= self::autoIdent("\t\t", $this->genRelMemberOne($rel,"\t\t"));
+			$private.= self::autoIdent("\t", $this->genRelMemberOne($rel,"\t\t"));
 			//$public .= $this->genGetter($attr,!$asHeader,"\t\t");
 			//$public .= $this->genSetter($attr,!$asHeader,"\t\t");
-			$public .= self::autoIdent("\t\t", $this->getterRelOne($rel));
+			$public .= self::autoIdent("\t", $this->getterRelOne($rel));
 			//$public .= "\n";
 		}
 
-		$private.= "\n\t\t// To Many relations\n";
+		$private.= "\n\t// To Many relations\n";
 		foreach ($this->relsMany as $rel) {
-			$private.= self::autoIdent("\t\t", $this->genRelMemberMany($rel,"\t\t"));
+			$private.= self::autoIdent("\t", $this->genRelMemberMany($rel,"\t\t"));
 			//$public .= $this->genGetter($attr,!$asHeader,"\t\t");
 			//$public .= $this->genSetter($attr,!$asHeader,"\t\t");
-			$public .= self::autoIdent("\t\t", $this->getterRelMany($rel));
+			$public .= self::autoIdent("\t", $this->getterRelMany($rel));
 			//$public .= "\n";
 		}
 		$code .= "#pragma db object table(\"".$this->tableName."\")\n";
-		$code .= "class ".$this->className."{\n\n";
-		$code .= $private."\n";
+		$code .= "class ".$this->className." : public QObject {\n\n";
+		$code .= "\tQ_OBJECT\n\n";
 		$code .= $public."\n";
+		$code .= $private."\n";
 		$code .= "};\n";
 
 		if ($asHeader) {
