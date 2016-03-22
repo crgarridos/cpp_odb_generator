@@ -9,6 +9,15 @@ function snakeToCamelUC($snakeText){
     return ucfirst(snakeToCamel($snakeText)); 
 }  
 
+
+function postfixFirstSnake($snakeText, $glue){
+    $ex = explode("_", $snakeText);
+    if (count($ex) > 1) {
+        return join($glue."_", $ex);
+    }
+    return $snakeText.$glue;
+}  
+
 function camelToSnake($camelText) {  
     return preg_replace_callback(
     	'/[A-Z]/',  

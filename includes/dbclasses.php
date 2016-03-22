@@ -45,7 +45,7 @@ class DatebaseInformation{
     }
 
     
-    public function getRelations($table){
+    public function getRelationsOne($table){
         $relationsSQL =  file_get_contents("includes/relations.sql");
         $relationsSQL =  str_replace("&table", $table, $relationsSQL);
         $relationsSQL =  str_replace("&db", $this->details->dbname, $relationsSQL);
@@ -58,8 +58,21 @@ class DatebaseInformation{
         return $statement->fetchAll(PDO::FETCH_OBJ);
     }
 
+    public function getRelationsMany($table){
+        $relationsSQL =  file_get_contents("includes/relations_many.sql");
+        $relationsSQL =  str_replace("&table", $table, $relationsSQL);
+        $relationsSQL =  str_replace("&db", $this->details->dbname, $relationsSQL);
+        //$this->printSQL($relationsSQL);
+
+        //$args = func_get_args();
+        //array_shift($args);
+        $statement = $this->connection->prepare($relationsSQL);
+        $statement->execute();
+        return $statement->fetchAll(PDO::FETCH_OBJ);
+    }
+
     public function getAllTablesNames(){
-        $sql =  "SELECT table_name FROM information_schema.tables WHERE table_schema = '&db'";
+        $sql =  "SELECT table_name FROM information_schema.tables WHERE table_schema = '&db' ORDER BY table_name";
         $sql =  str_replace("&db", $this->details->dbname, $sql);
         //$this->printSQL($propertiesSQL);
 

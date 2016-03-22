@@ -30,9 +30,10 @@ $tables =  $dbInfo->getAllTablesNames();
 $files = array();
 foreach ($tables as $table) {
     $attrArr = $dbInfo->getAttrs($table);
-    $relArr = $dbInfo->getRelations($table);
+    $relOneArr = $dbInfo->getRelationsOne($table);
+    $relManyArr = $dbInfo->getRelationsMany($table);
     //echo "<pre>";print_r($infoArr); echo "</pre>";
-    $generator = new CppQtOdbClass($table, $attrArr, $relArr);
+    $generator = new CppQtOdbClass($table, $attrArr, $relOneArr, $relManyArr);
     //echo "<pre>";print_r($generator); echo "</pre>";
     $files[] = (object)[
         "name" => snakeToCamelUC($table),
@@ -42,7 +43,7 @@ foreach ($tables as $table) {
 }
 if(isset($_GET["download"])){
     $zip = new ZipArchive();
-    $zipname = tempnam('.',$pDatabase).".zip";
+    $zipname = tempnam('.',$pDatabase."_").".zip";
 
     if ($zip->open($zipname, ZipArchive::CREATE)!==TRUE) {
         echo ("Impossible d'ouvrir le fichier <$zipname>\n");
