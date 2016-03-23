@@ -29,8 +29,8 @@ class CppQtOdbClass{
 		$code = "";
 		$def = $attr->type." ".$attr->name_.";";
 
-		// if(!$attr->notnull && in_array($attr->type, CppAttr::$NotNullTypes))
-		// 	$def = "odb::nullable<".$attr->type."> ".$attr->name_.";";
+		if(!$attr->notnull && in_array($attr->type, CppAttr::$NotNullTypes))
+			$def = "odb::nullable<".$attr->type."> ".$attr->name_.";";
 
 		if ($attr->comment != "") {
 			$def .= " // ".$attr->comment;
@@ -118,6 +118,8 @@ class CppQtOdbClass{
 
 	private function getter($attr){
 		$code = "const ".$attr->type."&\n";
+		if($attr->nullable())
+			$code = "const odb::nullable<".$attr->type.">\n";
 		$code.= $attr->name." () const\n";
 		$code.= "{\n\treturn ".$attr->name_.";\n}\n";
 		return $code;
@@ -165,20 +167,20 @@ class CppQtOdbClass{
 	public function genIncludes($attrs, $relsOne, $relsMany){
 		$includes = array();
 		$odb = "";
-		$qt = "#include <QObject>\n";
+		$qt = "#include <QtCore/QObject>\n";
 		$forw = "";
 		$foot = "";
 		foreach ($attrs as $attr) {
 			// $code .= json_encode($attr)."\n";
-			if(startsWith($attr->type, 'Q' && !in_array($attr->type, $includes))){
+			if(startsWith($attr->type, 'Q') && !in_array($attr->type, $includes)){
 				$includes[] = $attr->type;
 				$qt .= '#include <QtCore/'.$attr->type.">\n";
 			}
-			// else if (!$attr->notnull && in_array($attr->type, CppAttr::$NotNullTypes)
-			// 	&& !in_array("nullable", $includes)) {
-			// 	$includes[] = "nullable";
-			// 	$odb .= "#include <odb/nullable.hxx>\n";
-			// }
+			else if (!$attr->notnull && in_array($attr->type, CppAttr::$NotNullTypes)
+				&& !in_array("nullable", $includes)) {
+				$includes[] = "nullable";
+				$odb .= "#include <odb/nullable.hxx>\n";
+			}
 		}
 		
 		if(count($relsOne) > 0)
@@ -225,7 +227,7 @@ class CppQtOdbClass{
 		}
 		$private = "private:\n";
 		$private.= "\tfriend class odb::access;\n";
-		$private.= "\t".$this->genConstructor(false)."\n";
+		$private.= "\t".$this->genConstructor(false);
 
 		foreach ($this->attrs as $attr) {
 			$private.= self::autoIdent("\t", $this->genAttr($attr));
@@ -371,6 +373,14 @@ class CppAttr
 		$this->notnull = $mysqlAttr->cnull !== 'YES';
 		$this->extra = $mysqlAttr->cextra;
 		$this->key_type = $mysqlAttr->ckey;
+	}
+
+	/**
+	* The attribute should be declared as nullable ?
+	* @return the answer to the question aboiv.
+	*/
+	public function nullable(){
+		return !$this->notnull && in_array($this->type, CppAttr::$NotNullTypes);
 	}
 
 	public function isPK(){

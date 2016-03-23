@@ -9,10 +9,12 @@ include 'includes/dbclasses.php';
 include 'includes/cppclasses.php';
 
 
+$pass = file_get_contents("pass");
+
 if (isset($_GET["debug"])) {
-    list($pDatabase,$pHost,$pUser,$pPass) = array("tryba", "localhost", "cgarrido", "Har0303456");
+    list($pDatabase,$pHost,$pUser,$pPass) = array("tryba", "localhost", "cgarrido", $pass);
 }
-else if (!isset($_POST["db"]) || !isset($_POST["host"]) || !isset($_POST["user"]) || !isset($_POST["pass"])) {
+else if (!isset($_POST["db"]) || !isset($_POST["host"]) || !isset($_POST["user"]) || !$pass) {
     echo "[]";
     exit;
 }
@@ -20,7 +22,7 @@ else {
     $pDatabase = trim($_POST["db"]);
     $pHost = trim($_POST["host"]);
     $pUser = trim($_POST["user"]);
-    $pPass = trim($_POST["pass"]);
+    $pPass = isset($_POST["pass"]) && $_POST["pass"] !== "" ? trim($_POST["pass"]) : $pass;
 }
 
 $connDetails = new ConnexionDetails($pHost,$pUser,$pPass,$pDatabase);
