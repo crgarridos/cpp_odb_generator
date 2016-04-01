@@ -10,6 +10,10 @@ class Qt{
 	}
 
 	static function QLazyWeakPointer($class){
-		return "QLazyWeakPointer<".$class.">";
+		return "QWeakPointer<".$class.">";
+	}
+
+	static function QWeakPointer($class){
+		return "QWeakPointer<".$class.">";
 	}
 }

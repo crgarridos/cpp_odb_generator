@@ -17,6 +17,13 @@ function postfixFirstSnake($snakeText, $glue){
     }
     return $snakeText.$glue;
 }  
+function pluralFirstSnake($snakeText){
+    $ex = explode("_", $snakeText);
+    if (count($ex) > 1 && !endsWith($ex[0],"s")) {
+        return join("s_", $ex);
+    }
+    return $snakeText."s";
+}  
 
 function camelToSnake($camelText) {  
     return preg_replace_callback(
